@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useMemo, useCallback, useEffect } from 'react'
+import axios from 'axios'
 
 import { useWeb3React } from '../hooks'
 import {
@@ -16,6 +17,7 @@ const DECIMALS = 'decimals'
 const EXCHANGE_ADDRESS = 'exchangeAddress'
 
 const UPDATE = 'UPDATE'
+const RELOAD = 'RELOAD'
 
 const ETH = {
   ETH: {
@@ -686,6 +688,12 @@ function reducer(state, { type, payload }) {
         }
       }
     }
+    case RELOAD: {
+      return {
+        ...state,
+        ...payload
+      }
+    }
     default: {
       throw Error(`Unexpected action type in TokensContext reducer: '${type}'.`)
     }
@@ -693,7 +701,31 @@ function reducer(state, { type, payload }) {
 }
 
 export default function Provider({ children }) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_TOKENS_CONTEXT)
+  const init = {1: {}, 4: {}}
+
+  // const [state, dispatch] = useReducer(reducer, INITIAL_TOKENS_CONTEXT)
+  const [state, dispatch] = useReducer(reducer, init)
+
+  const fetchData = async () => {
+    const res = await axios('http://localhost:7009/token')
+    const list = res.data.data.rows
+    const result = {
+      1: {},
+      4: {}
+    }
+    for(let item of list) {
+      result[4][item.token_address] = {
+        [NAME]: item.name,
+        [SYMBOL]: item.symbol,
+        [DECIMALS]: item.decimals,
+        [EXCHANGE_ADDRESS]: item.exchange_address
+      }
+    }
+    dispatch({ type: RELOAD, payload: result})
+  }
+  useEffect(() => {
+    fetchData();
+  }, [])
 
   const update = useCallback((networkId, tokenAddress, name, symbol, decimals, exchangeAddress) => {
     dispatch({ type: UPDATE, payload: { networkId, tokenAddress, name, symbol, decimals, exchangeAddress } })
