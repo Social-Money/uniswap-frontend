@@ -707,7 +707,7 @@ export default function Provider({ children }) {
   const [state, dispatch] = useReducer(reducer, init)
 
   const fetchData = async () => {
-    const res = await axios('http://localhost:7009/token')
+    const res = await axios(`${process.env.REACT_APP_API_BASE_URL}/exchange/list`)
     const list = res.data.data.rows
     const result = {
       1: {},
